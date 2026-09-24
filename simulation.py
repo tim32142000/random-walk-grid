@@ -20,8 +20,4 @@ def step_people(people, grid_size=GRID_SIZE):
     return new_people
 
 
-people = [(6, 6), (0, 0), (5, 5)]
 
-for step in range(10):
-    people = step_people(people)
-    print(step + 1, people)

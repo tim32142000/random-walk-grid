@@ -5,9 +5,11 @@ import streamlit as st
 from simulation import step_people
 
 GRID_SIZE = 10
-DOTS_PER_LINE = 10
-MAX_DOTS_DISPLAY = 30
+DOTS_PER_LINE = 5
+MAX_DOTS_DISPLAY = 25
 CELL_SIZE = 48
+DOT_SIZE = 4
+DOT_GAP = 2
 
 
 def make_cell_label(count):
@@ -27,6 +29,25 @@ def make_cell_label(count):
         lines.append("•" * dots_in_line)
 
     return "\n".join(lines)
+
+
+def make_dot_shadows(count):
+    visible_count = min(count, MAX_DOTS_DISPLAY)
+
+    shadows = []
+
+    pitch = DOT_SIZE + DOT_GAP
+
+    for i in range(1, visible_count):
+        row = i // DOTS_PER_LINE
+        col = i % DOTS_PER_LINE
+
+        x = col * pitch
+        y = row * pitch
+
+        shadows.append(f"{x}px {y}px 0 0 currentColor")
+
+    return ", ".join(shadows)
 
 
 st.title("Random Walker Grid")
@@ -87,6 +108,10 @@ st.markdown(
         max-width: {GRID_SIZE * CELL_SIZE}px;
     }}
 
+    .st-key-grid div[data-testid="stHorizontalBlock"] {{
+        gap: 0 !important;
+    }}
+
     .st-key-grid div[data-testid="stColumn"] {{
         width: {CELL_SIZE}px !important;
         min-width: {CELL_SIZE}px !important;
@@ -103,18 +128,18 @@ st.markdown(
 
         border-radius: 0 !important;
 
-        white-space: pre-line !important;
         overflow: hidden !important;
 
         font-size: 11px !important;
-        line-height: 10px !important;
     }}
+
+
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-highlighted_cells = []
+cell_styles = []
 
 with st.container(
     key="grid",
@@ -131,47 +156,56 @@ with st.container(
 
             count = st.session_state.people.count(position)
 
-            label = make_cell_label(count)
-
             cell_key = f"cell_{row}_{col}"
 
-            if count > MAX_DOTS_DISPLAY:
-                highlighted_cells.append(cell_key)
+            if count > 0:
+                shadows = make_dot_shadows(count)
+
+                if count > MAX_DOTS_DISPLAY:
+                    dot_color = "#ff4b4b"
+                else:
+                    dot_color = "#ffffff"
+
+                cell_styles.append(f"""
+                    .st-key-{cell_key} button {{
+                        position: relative;
+                        color: transparent !important;
+                    }}
+
+                    .st-key-{cell_key} button::after {{
+                        content: "";
+                        position: absolute;
+
+                        width: {DOT_SIZE}px;
+                        height: {DOT_SIZE}px;
+
+                        left: 50%;
+                        top: 50%;
+
+                        transform: translate(-20px, -6px);
+
+                        border-radius: 50%;
+
+                        background-color: {dot_color};
+                        color: {dot_color};
+
+                        box-shadow: {shadows};
+                    }}
+                    """)
 
             if columns[col].button(
-                label,
+                " ",
                 key=cell_key,
                 help=f"人數：{count}",
             ):
                 st.session_state.people.append(position)
                 st.rerun()
 
-selectors = ",\n".join(
-    f".st-key-{key} button p"
-    for key in highlighted_cells
-)
-
-highlight_css = ""
-
-if selectors:
-    highlight_css = f"""
-    {selectors} {{
-        color: #ff4b4b !important;
-    }}
-    """
 
 st.markdown(
     f"""
     <style>
-
-    /* 每個 timestep 先把所有點恢復正常顏色 */
-    .st-key-grid button p {{
-        color: inherit !important;
-    }}
-
-    /* 再把目前超過上限的格子變紅 */
-    {highlight_css}
-
+    {"".join(cell_styles)}
     </style>
     """,
     unsafe_allow_html=True,
