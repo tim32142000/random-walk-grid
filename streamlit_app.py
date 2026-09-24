@@ -61,13 +61,13 @@ if "step_count" not in st.session_state:
 if "auto_run" not in st.session_state:
     st.session_state.auto_run = False
 
-st.write(
-    f"Step：{st.session_state.step_count} | "
-    f"目前小人數量：{len(st.session_state.people)}"
-)
+if st.session_state.auto_run:
+    st.write(f"🟢 **Running** | 目前小人數量：{len(st.session_state.people)}")
+else:
+    st.write(f"⏸️ **Paused** | 目前小人數量：{len(st.session_state.people)}")
 
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("move 1 step"):
@@ -81,18 +81,16 @@ with col1:
         st.rerun()
 
 with col2:
-    if st.button("auto move"):
-        st.session_state.auto_run = True
-
-        st.rerun()
+    if st.session_state.auto_run:
+        if st.button("Pause"):
+            st.session_state.auto_run = False
+            st.rerun()
+    else:
+        if st.button("Auto"):
+            st.session_state.auto_run = True
+            st.rerun()
 
 with col3:
-    if st.button("pause"):
-        st.session_state.auto_run = False
-
-        st.rerun()
-
-with col4:
     if st.button("Clear"):
         st.session_state.people = []
         st.session_state.step_count = 0
@@ -196,7 +194,6 @@ with st.container(
             if columns[col].button(
                 " ",
                 key=cell_key,
-                help=f"人數：{count}",
             ):
                 st.session_state.people.append(position)
                 st.rerun()
@@ -214,14 +211,12 @@ st.markdown(
 if st.session_state.auto_run:
     if st.session_state.people:
         time.sleep(0.2)
-
         st.session_state.people = step_people(st.session_state.people, GRID_SIZE)
 
         st.session_state.step_count += 1
 
-        st.rerun()
-
     else:
         st.session_state.auto_run = False
-        st.session_state.step_count = 0
         st.success("No people on the grid!")
+
+    st.rerun()
