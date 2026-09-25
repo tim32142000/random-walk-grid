@@ -2,14 +2,14 @@ import random
 
 GRID_SIZE = 10
 
-DIRECTION = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+DIRECTIONS = ((-1, 0), (1, 0), (0, -1), (0, 1))
 
 
 def step_people(people, grid_size=GRID_SIZE):
     new_people = []
 
     for row, col in people:
-        dr, dc = random.choice(DIRECTION)
+        dr, dc = random.choice(DIRECTIONS)
 
         new_row = row + dr
         new_col = col + dc

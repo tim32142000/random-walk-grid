@@ -1,34 +1,23 @@
 import time
+from collections import Counter
 
 import streamlit as st
 
 from simulation import step_people
 
 GRID_SIZE = 10
+
 DOTS_PER_LINE = 5
 MAX_DOTS_DISPLAY = 25
+
 CELL_SIZE = 48
 DOT_SIZE = 4
 DOT_GAP = 2
 
+DOTS_WIDTH = (DOTS_PER_LINE - 1) * (DOT_SIZE + DOT_GAP) + DOT_SIZE
+DOTS_OFFSET = DOTS_WIDTH / 2
 
-def make_cell_label(count):
-    if count == 0:
-        return " "
-
-    visible_count = min(count, MAX_DOTS_DISPLAY)
-
-    lines = []
-
-    for start in range(0, visible_count, DOTS_PER_LINE):
-
-        dots_in_line = min(
-            DOTS_PER_LINE,
-            visible_count - start,
-        )
-        lines.append("•" * dots_in_line)
-
-    return "\n".join(lines)
+BASE_TIMESTEP = 0.2
 
 
 def make_dot_shadows(count):
@@ -47,7 +36,7 @@ def make_dot_shadows(count):
 
         shadows.append(f"{x}px {y}px 0 0 currentColor")
 
-    return ", ".join(shadows)
+    return ", ".join(shadows) if shadows else "none"
 
 
 st.title("Random Walker Grid")
@@ -70,7 +59,7 @@ else:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("move 1 step"):
+    if st.button("Move 1 step"):
         st.session_state.people = step_people(
             st.session_state.people,
             GRID_SIZE,
@@ -86,7 +75,7 @@ with col2:
             st.session_state.auto_run = False
             st.rerun()
     else:
-        if st.button("Auto"):
+        if st.button("Play"):
             st.session_state.auto_run = True
             st.rerun()
 
@@ -97,6 +86,20 @@ with col3:
         st.session_state.auto_run = False
         st.rerun()
 
+speed_col, _ = st.columns([3, 1])
+
+with speed_col:
+    playback_speed = st.slider(
+        "Playback speed",
+        min_value=50,
+        max_value=200,
+        value=100,
+        step=50,
+        format="%d%%",
+    )
+    playback_rate = playback_speed / 100
+    time_step = BASE_TIMESTEP / playback_rate
+
 
 st.markdown(
     f"""
@@ -104,10 +107,6 @@ st.markdown(
     .st-key-grid {{
         width: {GRID_SIZE * CELL_SIZE}px;
         max-width: {GRID_SIZE * CELL_SIZE}px;
-    }}
-
-    .st-key-grid div[data-testid="stHorizontalBlock"] {{
-        gap: 0 !important;
     }}
 
     .st-key-grid div[data-testid="stColumn"] {{
@@ -122,13 +121,10 @@ st.markdown(
         min-height: {CELL_SIZE}px !important;
 
         padding: 2px !important;
-        margin: 0 !important;
 
         border-radius: 0 !important;
 
         overflow: hidden !important;
-
-        font-size: 11px !important;
     }}
 
 
@@ -136,6 +132,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+people_counts = Counter(st.session_state.people)
 
 cell_styles = []
 
@@ -152,7 +150,7 @@ with st.container(
         for col in range(GRID_SIZE):
             position = (row, col)
 
-            count = st.session_state.people.count(position)
+            count = people_counts[position]
 
             cell_key = f"cell_{row}_{col}"
 
@@ -180,7 +178,7 @@ with st.container(
                         left: 50%;
                         top: 50%;
 
-                        transform: translate(-20px, -6px);
+                        transform: translate(-{DOTS_OFFSET}px, -{DOTS_OFFSET}px);
 
                         border-radius: 50%;
 
@@ -210,13 +208,12 @@ st.markdown(
 
 if st.session_state.auto_run:
     if st.session_state.people:
-        time.sleep(0.2)
+        time.sleep(time_step)
         st.session_state.people = step_people(st.session_state.people, GRID_SIZE)
-
         st.session_state.step_count += 1
+
+        st.rerun()
 
     else:
         st.session_state.auto_run = False
         st.success("No people on the grid!")
-
-    st.rerun()
