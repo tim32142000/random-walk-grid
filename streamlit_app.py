@@ -48,17 +48,27 @@ if "step_count" not in st.session_state:
     st.session_state.step_count = 0
 
 if "auto_run" not in st.session_state:
-    st.session_state.auto_run = False
+    st.session_state.auto_run = True
 
 if st.session_state.auto_run:
-    st.write(f"🟢 **Running** | 目前小人數量：{len(st.session_state.people)}")
+    st.write(f"🟢 **Running** | Active Walkers：{len(st.session_state.people)}")
 else:
-    st.write(f"⏸️ **Paused** | 目前小人數量：{len(st.session_state.people)}")
+    st.write(f"⏸️ **Paused** | Active Walkers：{len(st.session_state.people)}")
 
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
+    if st.session_state.auto_run:
+        if st.button("Pause"):
+            st.session_state.auto_run = False
+            st.rerun()
+    else:
+        if st.button("Auto Run"):
+            st.session_state.auto_run = True
+            st.rerun()
+
+with col2:
     if st.button("Move 1 step"):
         st.session_state.people = step_people(
             st.session_state.people,
@@ -69,21 +79,12 @@ with col1:
 
         st.rerun()
 
-with col2:
-    if st.session_state.auto_run:
-        if st.button("Pause"):
-            st.session_state.auto_run = False
-            st.rerun()
-    else:
-        if st.button("Play"):
-            st.session_state.auto_run = True
-            st.rerun()
 
 with col3:
     if st.button("Clear"):
         st.session_state.people = []
         st.session_state.step_count = 0
-        st.session_state.auto_run = False
+        st.session_state.auto_run = True
         st.rerun()
 
 speed_col, _ = st.columns([3, 1])
@@ -194,6 +195,7 @@ with st.container(
                 key=cell_key,
             ):
                 st.session_state.people.append(position)
+                time.sleep(time_step / 4)
                 st.rerun()
 
 
@@ -213,7 +215,3 @@ if st.session_state.auto_run:
         st.session_state.step_count += 1
 
         st.rerun()
-
-    else:
-        st.session_state.auto_run = False
-        st.success("No people on the grid!")
