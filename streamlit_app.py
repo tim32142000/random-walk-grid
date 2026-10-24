@@ -48,7 +48,7 @@ if "step_count" not in st.session_state:
     st.session_state.step_count = 0
 
 if "auto_run" not in st.session_state:
-    st.session_state.auto_run = True
+    st.session_state.auto_run = False
 
 if st.session_state.auto_run:
     st.write(f"🟢 **Running** | Active Walkers：{len(st.session_state.people)}")
@@ -195,7 +195,7 @@ with st.container(
                 key=cell_key,
             ):
                 st.session_state.people.append(position)
-                time.sleep(time_step / 4)
+                st.session_state.auto_run = False
                 st.rerun()
 
 
